@@ -8,7 +8,7 @@ function rqListener(req, res) {
     res.write("<html>");
     res.write("<head><title>My Second Page</title></head>");
     res.write(
-      `<body><form action = "/message" method = "POST" ><input type = "text" name = "message" placeholder = "Enter"><button type = "submit">Send</button></form></body>`
+      `<body><form action = "/message" method = "GET" ><input type = "text" name = "message" placeholder = "Enter"><button type = "submit">Send</button></form></body>`
     );
     res.write("</html>");
     return res.end(); // Dừng hẳn chương trình sau khi phản hồi
@@ -19,16 +19,19 @@ function rqListener(req, res) {
       console.log(chunk); // in ra các chunk dữ liệu
       body.push(chunk); // lưu trữ các chunk dữ liệu vào mảng body;
     });
-    req.on("end", () => {
+    return req.on("end", () => {
       const parsedBody = Buffer.concat(body).toString(); // nối các chunk lại với nhau
       const message = parsedBody.split("=")[1]; // tách chuỗi theo dấu "=" và lấy phần tử thứ 2
-      console.log(message); // in ra message
-      fs.writeFileSync("message.txt", message); // ghi vào file message.txt
-      console.log(parsedBody); // in ra cac chunk da noi lai voi nhau
+      fs.writeFile("message.txt", message, (err) => {
+        if (err) {
+          console.error(err); // in ra loi neu co
+        }
+        res.statusCode = 302; // chuyen huong den trang khac
+        res.setHeader("Location", "/"); // chuyen huong den trang khac
+        return res.end(); // dừng lại
+      });
     });
     // fs.writeFileSync("message.txt", "DUMMY");
-    res.writeHead(302, { Location: "/" }); // Chuyển hướng về trang chủ
-    return res.end(); // Dừng hẳn chương trình sau khi phản hồi
   }
 
   // Mặc định cho các đường dẫn khác
@@ -36,7 +39,7 @@ function rqListener(req, res) {
   // res.writeHead(200, { "Content-Type": "text/plain" });
   // res.end("Hello World\n");
   // process.exit(): thực hiện hủy đăng kí, nó sẽ dừng lại
-  console.log(req.url, req.method, req.headers);
+  // console.log(req.url, req.method, req.headers);
   res.setHeader("Content-Type", "text/html");
   res.write("<html>");
   res.write("<head><title>My First Page</title></head>");
@@ -46,7 +49,7 @@ function rqListener(req, res) {
 }
 
 const server = http.createServer(rqListener);
-server.listen(3000);
+server.listen(3001);
 
 // eventloop là có một vòng lặp liên tục, miễn là có listener đăng kí và server tạo sẽ tạo
 // ra một listener,không bao giờ dừng lại
